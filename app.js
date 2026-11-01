@@ -100,10 +100,10 @@
   }
 
   async function fetchTrackerData() {
-    const apiUrl = typeof SED_CONFIG !== "undefined" && SED_CONFIG.apiUrl;
-    if (!apiUrl) throw new Error("Worker API URL is missing from config.js");
+    const dataUrl = typeof SED_CONFIG !== "undefined" && SED_CONFIG.dataUrl;
+    if (!dataUrl) throw new Error("Tracker data URL is missing from config.js");
 
-    const response = await fetch(apiUrl, {
+    const response = await fetch(dataUrl, {
       method: "GET",
       headers: { "Accept": "application/json" },
       cache: "no-store"
@@ -113,13 +113,13 @@
     try {
       data = await response.json();
     } catch {
-      throw new Error("Worker returned an invalid response");
+      throw new Error("Tracker data file returned an invalid response");
     }
 
     if (!response.ok) {
-      throw new Error(data && data.error ? data.error : "Worker request failed (" + response.status + ")");
+      throw new Error(data && data.error ? data.error : "Tracker data request failed (" + response.status + ")");
     }
-    if (!data || typeof data !== "object") throw new Error("Worker returned no data");
+    if (!data || typeof data !== "object") throw new Error("Tracker data file returned no data");
     return data;
   }
 
@@ -212,7 +212,7 @@
       } else if (anyOk) {
         setText("overall-status", "Partially connected · Some Roblox data is unavailable");
       } else {
-        setText("overall-status", "Worker connected · Roblox data temporarily unavailable");
+        setText("overall-status", "Tracker connected · Roblox data temporarily unavailable");
       }
 
       if (data.warning) console.warn("SED Tracker API:", data.warning);
@@ -222,8 +222,8 @@
         if (record && record.error) console.warn("Game data (" + key + "):", record.error);
       }
     } catch (error) {
-      console.error("SED Tracker Worker connection failed:", error);
-      setText("overall-status", "Worker connection failed · " + (error.message || "Retrying"));
+      console.error("SED Tracker data connection failed:", error);
+      setText("overall-status", "Tracker data connection failed · " + (error.message || "Retrying"));
       setText("game-updated", "Unable to retrieve tracker data");
 
       const games = typeof SED_CONFIG !== "undefined" && Array.isArray(SED_CONFIG.games) ? SED_CONFIG.games : [];
@@ -245,8 +245,8 @@
     renderGames();
     renderTeam();
 
-    if (typeof SED_CONFIG === "undefined" || !SED_CONFIG.apiUrl) {
-      setText("overall-status", "Configuration error · Worker API URL missing");
+    if (typeof SED_CONFIG === "undefined" || !SED_CONFIG.dataUrl) {
+      setText("overall-status", "Configuration error · Tracker data URL missing");
       return;
     }
 
