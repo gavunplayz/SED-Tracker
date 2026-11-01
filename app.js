@@ -103,9 +103,10 @@
     const dataUrl = typeof SED_CONFIG !== "undefined" && SED_CONFIG.dataUrl;
     if (!dataUrl) throw new Error("Tracker data URL is missing from config.js");
 
-    const response = await fetch(dataUrl, {
+    const freshUrl = dataUrl + (dataUrl.includes("?") ? "&" : "?") + "refresh=" + Date.now();
+    const response = await fetch(freshUrl, {
       method: "GET",
-      headers: { "Accept": "application/json" },
+      headers: { "Accept": "application/json", "Cache-Control": "no-cache" },
       cache: "no-store"
     });
 
