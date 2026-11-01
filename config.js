@@ -1,7 +1,7 @@
 // SED Tracker configuration.
-// Public Cloudflare Worker API used for Roblox game counts and team presence.
+// Static data file refreshed by GitHub Actions from public Roblox APIs.
 const SED_CONFIG = {
-  apiUrl: "https://sed-tracker-api.gavunplayzyt.workers.dev/api",
+  dataUrl: "./tracker-data.json",
   refreshIntervalMs: 30000,
   games: [
     {
