@@ -34,7 +34,7 @@
 
   function renderGames() {
     const root = $("game-grid");
-    if (!root || !window.SED_CONFIG || !Array.isArray(SED_CONFIG.games)) {
+    if (!root || typeof SED_CONFIG === "undefined" || !Array.isArray(SED_CONFIG.games)) {
       setText("overall-status", "Configuration error · Check config.js");
       return;
     }
@@ -60,7 +60,7 @@
 
   function renderTeam() {
     const root = $("team-groups");
-    const allAccounts = Array.isArray(window.SED_ACCOUNTS) ? SED_ACCOUNTS : [];
+    const allAccounts = typeof SED_ACCOUNTS !== "undefined" && Array.isArray(SED_ACCOUNTS) ? SED_ACCOUNTS : [];
     const people = allAccounts.filter((account) =>
       account &&
       typeof account.username === "string" &&
@@ -154,7 +154,7 @@
   }
 
   async function updateGames() {
-    if (!window.SED_CONFIG || !Array.isArray(SED_CONFIG.games)) return;
+    if (typeof SED_CONFIG === "undefined" || !Array.isArray(SED_CONFIG.games)) return;
     const results = await Promise.all(SED_CONFIG.games.map(updateOneGame));
     const successful = results.filter(Boolean).length;
     const now = new Date();
@@ -167,7 +167,7 @@
   }
 
   async function updatePresence() {
-    const people = (Array.isArray(window.SED_ACCOUNTS) ? SED_ACCOUNTS : [])
+    const people = (typeof SED_ACCOUNTS !== "undefined" && Array.isArray(SED_ACCOUNTS) ? SED_ACCOUNTS : [])
       .filter((person) => person && /^\d+$/.test(String(person.robloxId || "")));
     if (!people.length) return;
 
@@ -209,7 +209,7 @@
   function start() {
     renderGames();
     renderTeam();
-    if (!window.SED_CONFIG) {
+    if (typeof SED_CONFIG === "undefined") {
       setText("overall-status", "Configuration error · config.js did not load");
       return;
     }
