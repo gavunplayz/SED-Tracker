@@ -2,8 +2,6 @@
   "use strict";
 
   const GROUPS = ["Management", "Developer", "Tester", "Moderator"];
-  const ROBLOX_GET_PROXY = "https://proxy.cors.dev/";
-  const PRESENCE_ENDPOINT = "https://presence.roproxy.com/v1/presence/users";
   const PRESENCE_LABELS = {
     0: ["Offline", "offline"],
     1: ["Online", "online"],
@@ -13,6 +11,8 @@
   };
 
   const $ = (id) => document.getElementById(id);
+  let refreshInProgress = false;
+
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[char]);
@@ -20,16 +20,6 @@
   function setText(id, value) {
     const element = $(id);
     if (element) element.textContent = value;
-  }
-
-  async function getRobloxJson(url) {
-    const response = await fetch(ROBLOX_GET_PROXY + url, {
-      method: "GET",
-      headers: { "Accept": "application/json" },
-      cache: "no-store"
-    });
-    if (!response.ok) throw new Error("Roblox request failed (" + response.status + ")");
-    return response.json();
   }
 
   function renderGames() {
@@ -51,7 +41,7 @@
           <p class="game-subtitle">${escapeHtml(game.subtitle || "")}</p>
           <div class="player-count"><strong id="players-${escapeHtml(game.key)}">—</strong><span>PLAYERS</span></div>
           <div class="game-footer">
-            <span class="muted" id="game-detail-${escapeHtml(game.key)}">Connecting to Roblox…</span>
+            <span class="muted" id="game-detail-${escapeHtml(game.key)}">Connecting to tracker…</span>
             <span id="game-state-${escapeHtml(game.key)}">CONNECTING</span>
           </div>
         </article>`;
@@ -60,13 +50,13 @@
 
   function renderTeam() {
     const root = $("team-groups");
-    const allAccounts = typeof SED_ACCOUNTS !== "undefined" && Array.isArray(SED_ACCOUNTS) ? SED_ACCOUNTS : [];
-    const people = allAccounts.filter((account) =>
-      account &&
-      typeof account.username === "string" &&
-      account.username.trim() &&
-      GROUPS.includes(account.group) &&
-      /^\d+$/.test(String(account.robloxId || ""))
+    const accounts = typeof SED_ACCOUNTS !== "undefined" && Array.isArray(SED_ACCOUNTS) ? SED_ACCOUNTS : [];
+    const people = accounts.filter((person) =>
+      person &&
+      typeof person.username === "string" &&
+      person.username.trim() &&
+      GROUPS.includes(person.group) &&
+      /^\d+$/.test(String(person.robloxId || ""))
     );
 
     setText("team-total", String(people.length));
@@ -75,7 +65,7 @@
 
     if (!root) return;
     if (!people.length) {
-      root.innerHTML = '<div class="empty-team">No valid team members found. Check usernames, numeric Roblox IDs, and group names in <code>accounts.js</code>.</div>';
+      root.innerHTML = '<div class="empty-team">No valid team members found. Check accounts.js.</div>';
       return;
     }
 
@@ -100,7 +90,7 @@
                     <div class="member-name">${escapeHtml(displayName)}</div>
                     <div class="member-handle">@${escapeHtml(person.username)}</div>
                   </div>
-                  <div class="presence" id="presence-${escapeHtml(id)}"><i class="presence-dot offline"></i>Checking…</div>
+                  <div class="presence" id="presence-${escapeHtml(id)}"><i class="presence-dot offline"></i>Connecting…</div>
                   <a class="member-profile" href="${profile}" target="_blank" rel="noopener" aria-label="Open ${escapeHtml(person.username)}'s Roblox profile">↗</a>
                 </div>`;
             }).join("") : '<div class="empty-group">No members added yet.</div>'}
@@ -109,117 +99,160 @@
     }).join("");
   }
 
-  const universeIds = new Map();
+  async function fetchTrackerData() {
+    const apiUrl = typeof SED_CONFIG !== "undefined" && SED_CONFIG.apiUrl;
+    if (!apiUrl) throw new Error("Worker API URL is missing from config.js");
 
-  async function updateOneGame(game) {
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+      cache: "no-store"
+    });
+
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error("Worker returned an invalid response");
+    }
+
+    if (!response.ok) {
+      throw new Error(data && data.error ? data.error : "Worker request failed (" + response.status + ")");
+    }
+    if (!data || typeof data !== "object") throw new Error("Worker returned no data");
+    return data;
+  }
+
+  function updateGameCard(game, record) {
     const count = $("players-" + game.key);
     const detail = $("game-detail-" + game.key);
     const state = $("game-state-" + game.key);
-    if (!count || !detail || !state) return;
+    if (!count || !detail || !state) return record && record.status === "ok";
 
-    try {
-      if (!game.placeId || !/^\d+$/.test(String(game.placeId))) {
-        throw new Error("Missing or invalid Place ID");
-      }
-
-      let universeId = universeIds.get(game.placeId);
-      if (!universeId) {
-        const placeData = await getRobloxJson(
-          "https://apis.roblox.com/universes/v1/places/" + encodeURIComponent(game.placeId) + "/universe"
-        );
-        universeId = placeData.universeId;
-        if (!universeId) throw new Error("Could not resolve this Place ID");
-        universeIds.set(game.placeId, universeId);
-      }
-
-      const gameData = await getRobloxJson(
-        "https://games.roblox.com/v1/games?universeIds=" + encodeURIComponent(universeId)
-      );
-      const info = gameData.data && gameData.data[0];
-      if (!info) throw new Error("Experience not found or unavailable");
-
-      count.textContent = Number(info.playing ?? 0).toLocaleString();
+    if (record && record.status === "ok" && Number.isFinite(Number(record.playing))) {
+      count.textContent = Number(record.playing).toLocaleString();
       detail.textContent = "Live Roblox player count";
       state.textContent = "LIVE";
       state.style.color = "#d8f36a";
       return true;
-    } catch (error) {
-      count.textContent = "—";
-      detail.textContent = error.message || "Could not load player count";
-      state.textContent = "UNAVAILABLE";
-      state.style.color = "#ffad8f";
-      console.warn("SED Tracker game update failed:", game.name, error);
-      return false;
+    }
+
+    count.textContent = "—";
+    detail.textContent = record && record.error ? record.error : "Player count unavailable";
+    state.textContent = "UNAVAILABLE";
+    state.style.color = "#ffad8f";
+    return false;
+  }
+
+  function updateTeamPresence(presenceData) {
+    const accounts = typeof SED_ACCOUNTS !== "undefined" && Array.isArray(SED_ACCOUNTS) ? SED_ACCOUNTS : [];
+    const people = accounts.filter((person) => person && /^\d+$/.test(String(person.robloxId || "")));
+    const users = presenceData && presenceData.users ? presenceData.users : {};
+    let online = 0;
+    let inGame = 0;
+
+    for (const person of people) {
+      const id = String(person.robloxId);
+      const record = users[id];
+      const type = record && Number.isFinite(Number(record.type)) ? Number(record.type) : null;
+      const [label, className] = type === null
+        ? ["Unavailable", "offline"]
+        : (PRESENCE_LABELS[type] || ["Unavailable", "offline"]);
+
+      if (type !== null && type !== 0) online++;
+      if (type === 2) inGame++;
+
+      const target = $("presence-" + id);
+      if (target) {
+        target.innerHTML = '<i class="presence-dot ' + className + '"></i>' + label;
+      }
+    }
+
+    if (presenceData && presenceData.status === "ok") {
+      setText("team-online", String(online));
+      setText("team-ingame", String(inGame));
+    } else {
+      setText("team-online", "—");
+      setText("team-ingame", "—");
     }
   }
 
-  async function updateGames() {
-    if (typeof SED_CONFIG === "undefined" || !Array.isArray(SED_CONFIG.games)) return;
-    const results = await Promise.all(SED_CONFIG.games.map(updateOneGame));
-    const successful = results.filter(Boolean).length;
-    const now = new Date();
-    setText("game-updated", "Updated " + now.toLocaleDateString() + " at " + now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
-    setText("overall-status", successful === results.length
-      ? "Connected · Roblox game data is live"
-      : successful > 0
-        ? "Partially connected · Some game data unavailable"
-        : "Roblox connection unavailable · Retrying automatically");
+  function formatUpdatedAt(value) {
+    if (!value) return "Update time unavailable";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Update time unavailable";
+    return "Updated " + date.toLocaleDateString() + " at " +
+      date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   }
 
-  async function updatePresence() {
-    const people = (typeof SED_ACCOUNTS !== "undefined" && Array.isArray(SED_ACCOUNTS) ? SED_ACCOUNTS : [])
-      .filter((person) => person && /^\d+$/.test(String(person.robloxId || "")));
-    if (!people.length) return;
+  async function refresh() {
+    if (refreshInProgress) return;
+    refreshInProgress = true;
 
     try {
-      const response = await fetch(PRESENCE_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify({ userIds: people.map((person) => Number(person.robloxId)) }),
-        cache: "no-store"
-      });
-      if (!response.ok) throw new Error("Presence service returned " + response.status);
-      const data = await response.json();
-      const presences = new Map((data.userPresences || []).map((presence) => [String(presence.userId), presence]));
+      const data = await fetchTrackerData();
+      let successfulGames = 0;
+      const games = typeof SED_CONFIG !== "undefined" && Array.isArray(SED_CONFIG.games) ? SED_CONFIG.games : [];
 
-      let online = 0;
-      let inGame = 0;
-      for (const person of people) {
-        const presence = presences.get(String(person.robloxId));
-        const type = presence ? Number(presence.userPresenceType) : 0;
-        const [label, className] = PRESENCE_LABELS[type] || ["Unavailable", "offline"];
-        if (type !== 0 && presence) online++;
-        if (type === 2) inGame++;
-        const target = $("presence-" + person.robloxId);
-        if (target) target.innerHTML = '<i class="presence-dot ' + className + '"></i>' + label;
+      for (const game of games) {
+        if (updateGameCard(game, data.games && data.games[game.key])) successfulGames++;
       }
-      setText("team-online", String(online));
-      setText("team-ingame", String(inGame));
+
+      updateTeamPresence(data.presence);
+      setText("game-updated", formatUpdatedAt(data.updatedAt));
+
+      const presenceOk = data.presence && data.presence.status === "ok";
+      const allGamesOk = successfulGames === games.length;
+      const anyOk = successfulGames > 0 || presenceOk;
+
+      if (data.stale) {
+        setText("overall-status", "Connected · Showing last successful Roblox update");
+      } else if (allGamesOk && presenceOk) {
+        setText("overall-status", "Connected · Roblox game and team data is live");
+      } else if (anyOk) {
+        setText("overall-status", "Partially connected · Some Roblox data is unavailable");
+      } else {
+        setText("overall-status", "Worker connected · Roblox data temporarily unavailable");
+      }
+
+      if (data.warning) console.warn("SED Tracker API:", data.warning);
+      if (data.presence && data.presence.error) console.warn("Presence:", data.presence.error);
+      for (const key of ["main", "testing"]) {
+        const record = data.games && data.games[key];
+        if (record && record.error) console.warn("Game data (" + key + "):", record.error);
+      }
     } catch (error) {
-      console.warn("SED Tracker presence update unavailable:", error);
-      for (const person of people) {
+      console.error("SED Tracker Worker connection failed:", error);
+      setText("overall-status", "Worker connection failed · " + (error.message || "Retrying"));
+      setText("game-updated", "Unable to retrieve tracker data");
+
+      const games = typeof SED_CONFIG !== "undefined" && Array.isArray(SED_CONFIG.games) ? SED_CONFIG.games : [];
+      for (const game of games) updateGameCard(game, null);
+
+      const accounts = typeof SED_ACCOUNTS !== "undefined" && Array.isArray(SED_ACCOUNTS) ? SED_ACCOUNTS : [];
+      for (const person of accounts) {
         const target = $("presence-" + person.robloxId);
         if (target) target.innerHTML = '<i class="presence-dot offline"></i>Unavailable';
       }
       setText("team-online", "—");
       setText("team-ingame", "—");
+    } finally {
+      refreshInProgress = false;
     }
   }
 
   function start() {
     renderGames();
     renderTeam();
-    if (typeof SED_CONFIG === "undefined") {
-      setText("overall-status", "Configuration error · config.js did not load");
+
+    if (typeof SED_CONFIG === "undefined" || !SED_CONFIG.apiUrl) {
+      setText("overall-status", "Configuration error · Worker API URL missing");
       return;
     }
 
-    updateGames();
-    updatePresence();
-
+    refresh();
     const refreshMs = Math.max(30000, Number(SED_CONFIG.refreshIntervalMs) || 30000);
-    window.setInterval(updateGames, refreshMs);
-    window.setInterval(updatePresence, refreshMs);
+    window.setInterval(refresh, refreshMs);
   }
 
   if (document.readyState === "loading") {
