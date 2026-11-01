@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#10141d">
+  <meta name="description" content="Small Enclosed Driving live game and team tracker.">
+  <title>SED Tracker | Small Enclosed Driving</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Small Enclosed Driving Tracker home">
+        <span class="brand-mark">SED</span>
+        <span class="brand-copy"><strong>SMALL ENCLOSED DRIVING</strong><small>COMMUNITY TRACKER</small></span>
+      </a>
+      <div class="topbar-right">
+        <span class="live-indicator"><i></i> TRACKER ONLINE</span>
+        <a class="roblox-link" href="https://www.roblox.com/" target="_blank" rel="noopener">ROBLOX <span>↗</span></a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="eyebrow"><span class="eyebrow-line"></span> SMALL ENCLOSED DRIVING NETWORK</div>
+        <h1>THE SED <span>TRACKER.</span></h1>
+        <p class="hero-description">A live look at our game servers and the people behind Small Enclosed Driving.</p>
+        <div class="hero-meta"><span class="status-dot"></span><span id="overall-status">Preview mode · Live Roblox connection not configured</span></div>
+      </section>
+
+      <section class="section-block games-section">
+        <div class="section-heading">
+          <div><div class="section-kicker">01 / GAME NETWORK</div><h2>Game servers</h2></div>
+          <span class="section-note">PLAYER ACTIVITY</span>
+        </div>
+        <div class="game-grid" id="game-grid">
+          <article class="game-card">
+            <div class="game-card-top"><span class="game-tag main-tag">MAIN EXPERIENCE</span><span class="game-pulse"></span></div>
+            <h3>Main game</h3><p class="game-subtitle">Small Enclosed Driving</p>
+            <div class="player-count"><strong>—</strong><span>PLAYERS</span></div>
+            <div class="game-footer"><span class="muted">Awaiting game ID</span><span>NOT CONNECTED</span></div>
+          </article>
+          <article class="game-card testing-card">
+            <div class="game-card-top"><span class="game-tag testing-tag">TEST ENVIRONMENT</span><span class="game-pulse"></span></div>
+            <h3>Testing game</h3><p class="game-subtitle">Small Enclosed Driving · Testing</p>
+            <div class="player-count"><strong>—</strong><span>PLAYERS</span></div>
+            <div class="game-footer"><span class="muted">Awaiting game ID</span><span>NOT CONNECTED</span></div>
+          </article>
+        </div>
+        <div class="updated-row"><span class="updated-label">LAST UPDATED</span><span id="game-updated">Waiting for configuration</span></div>
+      </section>
+
+      <section class="section-block team-section">
+        <div class="section-heading">
+          <div><div class="section-kicker">02 / THE PEOPLE</div><h2>Meet the team</h2></div>
+          <span class="section-note">ROBLOX PRESENCE</span>
+        </div>
+        <div class="team-summary">
+          <div><strong id="team-total">0</strong><span>TEAM MEMBERS</span></div>
+          <div><strong id="team-online">—</strong><span>ONLINE</span></div>
+          <div><strong id="team-ingame">—</strong><span>IN GAME</span></div>
+        </div>
+        <div id="team-groups" class="team-groups">
+          <div class="empty-team">Add your team members in <code>accounts.js</code> to populate this section.</div>
+        </div>
+        <div class="presence-legend">
+          <span><i class="presence-dot online"></i> Online</span>
+          <span><i class="presence-dot ingame"></i> In Game</span>
+          <span><i class="presence-dot instudio"></i> In Studio</span>
+          <span><i class="presence-dot offline"></i> Offline</span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-brand"><span class="brand-mark small-mark">SED</span><span>SMALL ENCLOSED DRIVING</span></div>
+      <span>COMMUNITY TRACKER <b>·</b> V1 PREVIEW</span>
+    </footer>
+  </div>
+  <script src="config.js"></script>
+  <script src="accounts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
