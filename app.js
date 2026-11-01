@@ -131,9 +131,9 @@
 
     if (record && record.status === "ok" && Number.isFinite(Number(record.playing))) {
       count.textContent = Number(record.playing).toLocaleString();
-      detail.textContent = "Live Roblox player count";
-      state.textContent = "LIVE";
-      state.style.color = "#d8f36a";
+      detail.textContent = record.stale ? "Last successful player count · " + (record.error || "refresh pending") : "Live Roblox player count";
+      state.textContent = record.stale ? "STALE" : "LIVE";
+      state.style.color = record.stale ? "#ffcf70" : "#d8f36a";
       return true;
     }
 
