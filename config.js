@@ -1,6 +1,7 @@
 // SED Tracker configuration.
-// These are Roblox PLACE IDs supplied for the two experiences.
+// Public Cloudflare Worker API used for Roblox game counts and team presence.
 const SED_CONFIG = {
+  apiUrl: "https://sed-tracker-api.gavunplayzyt.workers.dev/api",
   refreshIntervalMs: 30000,
   games: [
     {
