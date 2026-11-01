@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "updatedAt": "2026-11-01T15:54:26.040Z",
+  "updatedAt": "2026-11-01T16:07:13.455Z",
   "games": {
     "main": {
       "name": "Main game",
@@ -17,7 +17,7 @@
       "name": "Testing game",
       "placeId": "118413215449409",
       "universeId": "9114127459",
-      "playing": 0,
+      "playing": 1,
       "maxPlayers": 6,
       "visits": 154,
       "status": "ok",
@@ -39,8 +39,8 @@
         "lastLocation": ""
       },
       "5571894841": {
-        "type": 0,
-        "status": "Offline",
+        "type": 2,
+        "status": "In Game",
         "lastLocation": ""
       },
       "9891891463": {
