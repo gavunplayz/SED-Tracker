@@ -1,0 +1,185 @@
+name: Refresh Roblox tracker data
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-tracker-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Fetch public Roblox data
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const places = {
+            main: { name: "Main game", placeId: "16382363034" },
+            testing: { name: "Testing game", placeId: "118413215449409" }
+          };
+          const userIds = ["5571894841", "9891891463", "1696051019", "2758237932"];
+          const previous = (() => {
+            try { return JSON.parse(fs.readFileSync("tracker-data.json", "utf8")); }
+            catch { return null; }
+          })();
+
+          async function getJson(url, options = {}) {
+            const response = await fetch(url, {
+              ...options,
+              headers: {
+                "Accept": "application/json",
+                "User-Agent": "SED-Tracker-GitHubActions/1.0",
+                ...(options.headers || {})
+              },
+              signal: AbortSignal.timeout(15000)
+            });
+            if (!response.ok) {
+              const error = new Error("HTTP " + response.status + " from " + new URL(url).hostname);
+              error.status = response.status;
+              error.retryAfter = response.headers.get("retry-after");
+              throw error;
+            }
+            return response.json();
+          }
+
+          async function withFallback(urls, options = {}) {
+            const errors = [];
+            for (const url of urls) {
+              try { return await getJson(url, options); }
+              catch (error) {
+                errors.push(error.message);
+                if (error.status && error.status !== 429 && error.status < 500) break;
+              }
+            }
+            throw new Error(errors.join("; ") || "Request failed");
+          }
+
+          async function main() {
+            const output = {
+              ok: false,
+              updatedAt: new Date().toISOString(),
+              games: {},
+              presence: { status: "error", users: {}, error: "Not fetched yet" },
+              source: "GitHub Actions · public Roblox APIs"
+            };
+
+            const keys = Object.keys(places);
+            const universeResults = await Promise.all(keys.map(async key => {
+              const placeId = places[key].placeId;
+              try {
+                const encoded = encodeURIComponent(placeId);
+                const result = await withFallback([
+                  "https://apis.roblox.com/universes/v1/places/" + encoded + "/universe",
+                  "https://apis.roproxy.com/universes/v1/places/" + encoded + "/universe"
+                ]);
+                if (!result.universeId) throw new Error("No Universe ID returned for " + placeId);
+                return [key, String(result.universeId), null];
+              } catch (error) {
+                return [key, null, error.message];
+              }
+            }));
+
+            const universeIds = universeResults.filter(x => x[1]).map(x => x[1]);
+            let gameByUniverse = {};
+            let gamesError = null;
+            if (universeIds.length) {
+              try {
+                const query = encodeURIComponent(universeIds.join(","));
+                const result = await withFallback([
+                  "https://games.roblox.com/v1/games?universeIds=" + query,
+                  "https://games.roproxy.com/v1/games?universeIds=" + query
+                ]);
+                for (const game of (result.data || [])) gameByUniverse[String(game.id)] = game;
+              } catch (error) {
+                gamesError = error.message;
+              }
+            }
+
+            for (const [key, universeId, lookupError] of universeResults) {
+              const place = places[key];
+              const game = universeId && gameByUniverse[universeId];
+              if (game) {
+                output.games[key] = {
+                  name: place.name, placeId: place.placeId, universeId,
+                  playing: Number(game.playing || 0),
+                  maxPlayers: Number(game.maxPlayers || 0),
+                  visits: Number(game.visits || 0),
+                  status: "ok", stale: false, error: null
+                };
+              } else {
+                const old = previous && previous.games && previous.games[key];
+                const reason = lookupError || gamesError || "No public game data returned";
+                output.games[key] = old && old.status === "ok"
+                  ? { ...old, stale: true, error: reason }
+                  : { name: place.name, placeId: place.placeId, playing: null, status: "error", error: reason };
+              }
+            }
+
+            try {
+              const body = JSON.stringify({ userIds: userIds.map(Number) });
+              const result = await withFallback([
+                "https://presence.roblox.com/v1/presence/users",
+                "https://presence.roproxy.com/v1/presence/users"
+              ], {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body
+              });
+              const users = {};
+              for (const item of (result.userPresences || [])) {
+                const type = Number(item.userPresenceType || 0);
+                users[String(item.userId)] = {
+                  type,
+                  status: ({0:"Offline",1:"Online",2:"In Game",3:"In Studio"})[type] || "Unavailable",
+                  lastLocation: type === 2 ? (item.lastLocation || "") : ""
+                };
+              }
+              for (const id of userIds) {
+                if (!users[id]) users[id] = { type: 0, status: "Offline", lastLocation: "" };
+              }
+              output.presence = { status: "ok", users, error: null };
+            } catch (error) {
+              const oldPresence = previous && previous.presence;
+              output.presence = oldPresence && oldPresence.status === "ok"
+                ? { ...oldPresence, stale: true, error: error.message }
+                : { status: "error", users: {}, error: error.message };
+            }
+
+            output.ok = Object.values(output.games).some(g => g.status === "ok") || output.presence.status === "ok";
+            const allStale = Object.values(output.games).every(g => g.stale || g.status !== "ok") &&
+              (output.presence.stale || output.presence.status !== "ok");
+            if (allStale && previous && previous.updatedAt) output.previousSuccessfulUpdate = previous.updatedAt;
+            fs.writeFileSync("tracker-data.json", JSON.stringify(output, null, 2) + "\n");
+            console.log(JSON.stringify({
+              ok: output.ok,
+              games: Object.fromEntries(Object.entries(output.games).map(([k,v]) => [k, {status:v.status, stale:!!v.stale, playing:v.playing, error:v.error}])),
+              presence: {status:output.presence.status, stale:!!output.presence.stale, error:output.presence.error}
+            }, null, 2));
+          }
+
+          main().catch(error => { console.error(error); process.exit(1); });
+          NODE
+
+      - name: Publish updated data file
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tracker-data.json
+          if git diff --cached --quiet; then
+            echo "Tracker data has not changed."
+          else
+            git commit -m "Refresh Roblox tracker data"
+            git push
+          fi
