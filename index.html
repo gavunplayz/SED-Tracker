@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <div class="site-shell">
@@ -29,7 +29,7 @@
         <div class="eyebrow"><span class="eyebrow-line"></span> SMALL ENCLOSED DRIVING NETWORK</div>
         <h1>THE SED <span>TRACKER.</span></h1>
         <p class="hero-description">A live look at our game servers and the people behind Small Enclosed Driving.</p>
-        <div class="hero-meta"><span class="status-dot"></span><span id="overall-status">Preview mode · Live Roblox connection not configured</span></div>
+        <div class="hero-meta"><span class="status-dot"></span><span id="overall-status">Loading Roblox data…</span></div>
       </section>
 
       <section class="section-block games-section">
@@ -38,20 +38,9 @@
           <span class="section-note">PLAYER ACTIVITY</span>
         </div>
         <div class="game-grid" id="game-grid">
-          <article class="game-card">
-            <div class="game-card-top"><span class="game-tag main-tag">MAIN EXPERIENCE</span><span class="game-pulse"></span></div>
-            <h3>Main game</h3><p class="game-subtitle">Small Enclosed Driving</p>
-            <div class="player-count"><strong>—</strong><span>PLAYERS</span></div>
-            <div class="game-footer"><span class="muted">Awaiting game ID</span><span>NOT CONNECTED</span></div>
-          </article>
-          <article class="game-card testing-card">
-            <div class="game-card-top"><span class="game-tag testing-tag">TEST ENVIRONMENT</span><span class="game-pulse"></span></div>
-            <h3>Testing game</h3><p class="game-subtitle">Small Enclosed Driving · Testing</p>
-            <div class="player-count"><strong>—</strong><span>PLAYERS</span></div>
-            <div class="game-footer"><span class="muted">Awaiting game ID</span><span>NOT CONNECTED</span></div>
-          </article>
+          <div class="empty-team">Loading game information…</div>
         </div>
-        <div class="updated-row"><span class="updated-label">LAST UPDATED</span><span id="game-updated">Waiting for configuration</span></div>
+        <div class="updated-row"><span class="updated-label">LAST UPDATED</span><span id="game-updated">Connecting to Roblox…</span></div>
       </section>
 
       <section class="section-block team-section">
@@ -65,7 +54,7 @@
           <div><strong id="team-ingame">—</strong><span>IN GAME</span></div>
         </div>
         <div id="team-groups" class="team-groups">
-          <div class="empty-team">Add your team members in <code>accounts.js</code> to populate this section.</div>
+          <div class="empty-team">Loading team directory…</div>
         </div>
         <div class="presence-legend">
           <span><i class="presence-dot online"></i> Online</span>
@@ -78,11 +67,11 @@
 
     <footer class="footer">
       <div class="footer-brand"><span class="brand-mark small-mark">SED</span><span>SMALL ENCLOSED DRIVING</span></div>
-      <span>COMMUNITY TRACKER <b>·</b> V1 PREVIEW</span>
+      <span>COMMUNITY TRACKER <b>·</b> V2</span>
     </footer>
   </div>
-  <script src="config.js"></script>
-  <script src="accounts.js"></script>
-  <script src="app.js"></script>
+  <script src="config.js?v=3"></script>
+  <script src="accounts.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
