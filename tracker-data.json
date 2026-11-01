@@ -1,0 +1,26 @@
+{
+  "ok": false,
+  "updatedAt": null,
+  "games": {
+    "main": {
+      "name": "Main game",
+      "placeId": "16382363034",
+      "playing": null,
+      "status": "error",
+      "error": "Waiting for the first scheduled GitHub Actions refresh."
+    },
+    "testing": {
+      "name": "Testing game",
+      "placeId": "118413215449409",
+      "playing": null,
+      "status": "error",
+      "error": "Waiting for the first scheduled GitHub Actions refresh."
+    }
+  },
+  "presence": {
+    "status": "error",
+    "users": {},
+    "error": "Waiting for the first scheduled GitHub Actions refresh."
+  },
+  "source": "GitHub Actions · public Roblox APIs"
+}
