@@ -1,5 +1,5 @@
 // Small Enclosed Driving Tracker - Cloudflare Worker
-// Public Roblox information only. No passwords, cookies, or API keys.
+// Uses public Roblox endpoints only. No credentials or private account data.
 
 const PLACE_IDS = {
   main: "16382363034",
@@ -7,10 +7,10 @@ const PLACE_IDS = {
 };
 
 const TEAM_USER_IDS = [
-  "5571894841", // GavunPlayz48
-  "9891891463", // BODCreator2
-  "1696051019", // Fafnear644
-  "2758237932"  // Seahermitcrab
+  "5571894841",
+  "9891891463",
+  "1696051019",
+  "2758237932"
 ];
 
 const GAME_NAMES = {
@@ -25,12 +25,10 @@ const PRESENCE_NAMES = {
   3: "In Studio"
 };
 
-// Isolate-level cache reduces repeated Roblox requests. It is temporary;
-// Cloudflare may start more than one isolate, so this is not a permanent cache.
 let cachedPayload = null;
 let cachedAt = 0;
 let pendingUpdate = null;
-const universeIds = {};
+const universeIds = Object.create(null);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,34 +44,57 @@ function json(data, status = 200, extraHeaders = {}) {
   });
 }
 
-async function robloxJson(url, options = {}) {
+async function requestJson(url, options = {}) {
   const response = await fetch(url, {
     ...options,
     headers: {
       "Accept": "application/json",
-      "User-Agent": "SED-Tracker/1.0",
+      "User-Agent": "SED-Tracker/1.1",
       ...(options.headers || {})
     }
   });
 
   if (!response.ok) {
-    const error = new Error("Roblox returned HTTP " + response.status);
+    const error = new Error("HTTP " + response.status + " from " + new URL(url).hostname);
     error.status = response.status;
-    const retryAfter = response.headers.get("Retry-After");
-    if (retryAfter) error.retryAfter = retryAfter;
+    error.host = new URL(url).hostname;
+    error.retryAfter = response.headers.get("Retry-After") || null;
     throw error;
   }
 
   return response.json();
 }
 
+// Try Roblox's official endpoint first, then its compatible public mirror.
+// This specifically handles rate limits affecting Cloudflare's outbound IP.
+async function requestJsonWithFallback(urls, options = {}) {
+  const failures = [];
+
+  for (const url of urls) {
+    try {
+      return await requestJson(url, options);
+    } catch (error) {
+      failures.push(error);
+      // Only retry another host for rate limits or temporary/server/network errors.
+      if (error.status && error.status !== 429 && error.status < 500) break;
+    }
+  }
+
+  const last = failures[failures.length - 1] || new Error("Request failed");
+  const combined = new Error(failures.map((e) => e.message).join("; "));
+  combined.status = last.status || null;
+  combined.retryAfter = last.retryAfter || null;
+  throw combined;
+}
+
 async function getUniverseId(placeId) {
   if (universeIds[placeId]) return universeIds[placeId];
 
-  const result = await robloxJson(
-    "https://apis.roblox.com/universes/v1/places/" +
-    encodeURIComponent(placeId) + "/universe"
-  );
+  const encoded = encodeURIComponent(placeId);
+  const result = await requestJsonWithFallback([
+    "https://apis.roblox.com/universes/v1/places/" + encoded + "/universe",
+    "https://apis.roproxy.com/universes/v1/places/" + encoded + "/universe"
+  ]);
 
   if (!result.universeId) throw new Error("No Universe ID returned for Place ID " + placeId);
   universeIds[placeId] = String(result.universeId);
@@ -83,11 +104,14 @@ async function getUniverseId(placeId) {
 async function getGame(key, placeId) {
   try {
     const universeId = await getUniverseId(placeId);
-    const result = await robloxJson(
-      "https://games.roblox.com/v1/games?universeIds=" + encodeURIComponent(universeId)
-    );
+    const query = encodeURIComponent(universeId);
+    const result = await requestJsonWithFallback([
+      "https://games.roblox.com/v1/games?universeIds=" + query,
+      "https://games.roproxy.com/v1/games?universeIds=" + query
+    ]);
+
     const game = result.data && result.data[0];
-    if (!game) throw new Error("Roblox did not return this experience");
+    if (!game) throw new Error("No public game data returned for Universe ID " + universeId);
 
     return {
       name: GAME_NAMES[key],
@@ -97,6 +121,7 @@ async function getGame(key, placeId) {
       maxPlayers: Number(game.maxPlayers || 0),
       visits: Number(game.visits || 0),
       status: "ok",
+      source: "Roblox game details",
       error: null
     };
   } catch (error) {
@@ -114,14 +139,12 @@ async function getGame(key, placeId) {
 
 async function getPresence() {
   try {
-    const result = await robloxJson(
+    const result = await requestJson(
       "https://presence.roblox.com/v1/presence/users",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userIds: TEAM_USER_IDS.map(Number)
-        })
+        body: JSON.stringify({ userIds: TEAM_USER_IDS.map(Number) })
       }
     );
 
@@ -175,9 +198,8 @@ async function getPayload() {
 
   pendingUpdate = (async () => {
     const fresh = await buildPayload();
-    const hasAnyData = fresh.games.main.status === "ok" ||
-      fresh.games.testing.status === "ok" ||
-      fresh.presence.status === "ok";
+    const hasGameData = fresh.games.main.status === "ok" || fresh.games.testing.status === "ok";
+    const hasAnyData = hasGameData || fresh.presence.status === "ok";
 
     if (hasAnyData) {
       cachedPayload = fresh;
@@ -185,9 +207,12 @@ async function getPayload() {
       return fresh;
     }
 
-    // Keep the last good response briefly if Roblox temporarily rate-limits us.
     if (cachedPayload && Date.now() - cachedAt < 5 * 60 * 1000) {
-      return { ...cachedPayload, stale: true, warning: "Roblox temporarily unavailable; showing last successful update." };
+      return {
+        ...cachedPayload,
+        stale: true,
+        warning: "Roblox temporarily unavailable; showing the last successful update."
+      };
     }
     return fresh;
   })();
@@ -208,7 +233,11 @@ export default {
     }
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "SED Tracker API", message: "Worker is running." });
+      return json({
+        ok: true,
+        service: "SED Tracker API",
+        message: "Worker is running."
+      });
     }
 
     if (url.pathname !== "/api") {
