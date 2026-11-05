@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "updatedAt": "2026-11-05T14:53:54.590Z",
+  "updatedAt": "2026-11-05T21:21:21.069Z",
   "games": {
     "main": {
       "name": "Main game",
@@ -29,14 +29,14 @@
     "status": "ok",
     "users": {
       "1696051019": {
-        "type": 1,
-        "status": "Online",
+        "type": 0,
+        "status": "Offline",
         "lastLocation": ""
       },
       "2758237932": {
-        "type": 2,
-        "status": "In Game",
-        "lastLocation": "PORTALS"
+        "type": 0,
+        "status": "Offline",
+        "lastLocation": ""
       },
       "5571894841": {
         "type": 0,
