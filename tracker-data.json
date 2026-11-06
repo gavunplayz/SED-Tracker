@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "updatedAt": "2026-11-05T21:21:21.069Z",
+  "updatedAt": "2026-11-06T01:41:55.130Z",
   "games": {
     "main": {
       "name": "Main game",
@@ -34,13 +34,13 @@
         "lastLocation": ""
       },
       "2758237932": {
-        "type": 0,
-        "status": "Offline",
-        "lastLocation": ""
+        "type": 2,
+        "status": "In Game",
+        "lastLocation": "Abyssal 🎃"
       },
       "5571894841": {
-        "type": 0,
-        "status": "Offline",
+        "type": 2,
+        "status": "In Game",
         "lastLocation": ""
       },
       "9891891463": {
