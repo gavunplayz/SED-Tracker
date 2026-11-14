@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "updatedAt": "2026-11-14T16:49:40.850Z",
+  "updatedAt": "2026-11-14T20:59:47.146Z",
   "games": {
     "main": {
       "name": "Main game",
@@ -34,13 +34,13 @@
         "lastLocation": ""
       },
       "2758237932": {
-        "type": 0,
-        "status": "Offline",
-        "lastLocation": ""
-      },
-      "5571894841": {
         "type": 2,
         "status": "In Game",
+        "lastLocation": "[UPDATE🔪] Slap Battles👏"
+      },
+      "5571894841": {
+        "type": 0,
+        "status": "Offline",
         "lastLocation": ""
       },
       "9891891463": {
