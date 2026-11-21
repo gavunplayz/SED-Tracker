@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "updatedAt": "2026-11-20T18:43:35.548Z",
+  "updatedAt": "2026-11-21T00:19:39.758Z",
   "games": {
     "main": {
       "name": "Main game",
@@ -34,9 +34,9 @@
         "lastLocation": ""
       },
       "2758237932": {
-        "type": 0,
-        "status": "Offline",
-        "lastLocation": ""
+        "type": 2,
+        "status": "In Game",
+        "lastLocation": "[🔮ENCHANTS] Starfall 🌠"
       },
       "5571894841": {
         "type": 0,
