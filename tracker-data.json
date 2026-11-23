@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "updatedAt": "2026-11-22T21:54:52.892Z",
+  "updatedAt": "2026-11-23T02:21:54.827Z",
   "games": {
     "main": {
       "name": "Main game",
@@ -34,13 +34,13 @@
         "lastLocation": ""
       },
       "2758237932": {
-        "type": 2,
-        "status": "In Game",
-        "lastLocation": "No More Time [ALPHA]"
+        "type": 0,
+        "status": "Offline",
+        "lastLocation": ""
       },
       "5571894841": {
-        "type": 2,
-        "status": "In Game",
+        "type": 0,
+        "status": "Offline",
         "lastLocation": ""
       },
       "9891891463": {
