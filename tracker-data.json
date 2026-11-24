@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "updatedAt": "2026-11-23T22:33:26.824Z",
+  "updatedAt": "2026-11-24T06:22:10.566Z",
   "games": {
     "main": {
       "name": "Main game",
@@ -34,13 +34,13 @@
         "lastLocation": ""
       },
       "2758237932": {
-        "type": 1,
-        "status": "Online",
+        "type": 0,
+        "status": "Offline",
         "lastLocation": ""
       },
       "5571894841": {
-        "type": 2,
-        "status": "In Game",
+        "type": 0,
+        "status": "Offline",
         "lastLocation": ""
       },
       "9891891463": {
