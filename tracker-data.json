@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "updatedAt": "2026-11-25T20:37:38.253Z",
+  "updatedAt": "2026-11-26T03:07:34.010Z",
   "games": {
     "main": {
       "name": "Main game",
@@ -19,7 +19,7 @@
       "universeId": "9114127459",
       "playing": 0,
       "maxPlayers": 6,
-      "visits": 156,
+      "visits": 160,
       "status": "ok",
       "stale": false,
       "error": null
@@ -34,13 +34,13 @@
         "lastLocation": ""
       },
       "2758237932": {
-        "type": 0,
-        "status": "Offline",
-        "lastLocation": ""
-      },
-      "5571894841": {
         "type": 2,
         "status": "In Game",
+        "lastLocation": "The Great Build"
+      },
+      "5571894841": {
+        "type": 0,
+        "status": "Offline",
         "lastLocation": ""
       },
       "9891891463": {
