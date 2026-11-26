@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "updatedAt": "2026-11-26T03:07:34.010Z",
+  "updatedAt": "2026-11-26T12:28:42.560Z",
   "games": {
     "main": {
       "name": "Main game",
@@ -34,9 +34,9 @@
         "lastLocation": ""
       },
       "2758237932": {
-        "type": 2,
-        "status": "In Game",
-        "lastLocation": "The Great Build"
+        "type": 0,
+        "status": "Offline",
+        "lastLocation": ""
       },
       "5571894841": {
         "type": 0,
