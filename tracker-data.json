@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "updatedAt": "2026-11-26T21:52:48.231Z",
+  "updatedAt": "2026-11-27T03:55:17.875Z",
   "games": {
     "main": {
       "name": "Main game",
@@ -19,7 +19,7 @@
       "universeId": "9114127459",
       "playing": 0,
       "maxPlayers": 6,
-      "visits": 160,
+      "visits": 170,
       "status": "ok",
       "stale": false,
       "error": null
