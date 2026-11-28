@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "updatedAt": "2026-11-28T04:02:00.511Z",
+  "updatedAt": "2026-11-28T12:53:22.761Z",
   "games": {
     "main": {
       "name": "Main game",
@@ -34,9 +34,9 @@
         "lastLocation": ""
       },
       "2758237932": {
-        "type": 0,
-        "status": "Offline",
-        "lastLocation": ""
+        "type": 2,
+        "status": "In Game",
+        "lastLocation": "Vestige [PlayTest]"
       },
       "5571894841": {
         "type": 0,
